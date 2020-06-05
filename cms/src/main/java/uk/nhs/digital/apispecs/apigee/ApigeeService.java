@@ -2,6 +2,10 @@ package uk.nhs.digital.apispecs.apigee;
 
 import static java.util.Arrays.asList;
 
+import org.hippoecm.hst.site.HstServices;
+import org.onehippo.cms7.crisp.api.broker.ResourceServiceBroker;
+import org.onehippo.cms7.crisp.api.resource.Resource;
+import org.onehippo.cms7.crisp.hst.module.CrispHstServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
@@ -52,9 +56,22 @@ public class ApigeeService implements OpenApiSpecificationRepository {
 
         LOGGER.debug("Retrieving list of available specifications.");
 
+        tryCrisp();
+
         final String accessToken = getAccessToken();
 
         return getSpecStatuses(accessToken);
+    }
+
+    private void tryCrisp() {
+        final ResourceServiceBroker broker = CrispHstServices.getDefaultResourceServiceBroker(HstServices.getComponentManager());
+
+        final Resource product = broker.resolve("apigeeAllSpecifications", "");
+
+
+        // try setting custom interceptor on OAuth2RestTemplate to generate and supply OTP
+
+        System.out.println("Product: " + product);
     }
 
     private List<OpenApiSpecificationStatus> getSpecStatuses(final String accessToken) throws ApigeeServiceException {

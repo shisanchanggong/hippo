@@ -68,7 +68,16 @@ definitions:
                                                      </constructor-arg>
                                                  </bean>
                                              </constructor-arg>
-                                             <property name=\"requestFactory\" ref=\"org.springframework.http.client.ClientHttpRequestFactory\" />
+
+                                             <property name=\"requestFactory\">
+                                                <bean class=\"org.springframework.http.client.BufferingClientHttpRequestFactory\">
+                                                    <constructor-arg>
+                                                        <bean class=\"org.springframework.http.client.SimpleClientHttpRequestFactory\">
+                                                        </bean>
+                                                    </constructor-arg>
+                                                </bean>
+                                             </property>
+
                                              <property name=\"accessTokenProvider\">
                                                  <bean class=\"org.springframework.security.oauth2.client.token.grant.password.ResourceOwnerPasswordAccessTokenProvider\">
                                                      <property name=\"tokenRequestEnhancer\">
@@ -78,9 +87,16 @@ definitions:
                                                                  </bean>
                                                              </constructor-arg>
                                                              <constructor-arg value=\"${DEVZONE_APIGEE_OAUTH_OTPKEY}\" />
+                                                             <constructor-arg value=\"${DEVZONE_APIGEE_OAUTH_BASICAUTHTOKEN}\" />
                                                          </bean>
                                                      </property>
                                                  </bean>
+                                             </property>
+                                             <property name=\"interceptors\">
+                                                  <list>
+                                                    <bean class=\"uk.nhs.digital.apispecs.apigee.auth.RequestResponseLoggingInterceptor\">
+                                                    </bean>
+                                                  </list>
                                              </property>
                                          </bean>
                                      </property>

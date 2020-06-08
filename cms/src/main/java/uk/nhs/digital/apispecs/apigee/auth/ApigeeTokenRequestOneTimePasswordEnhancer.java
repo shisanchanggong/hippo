@@ -17,11 +17,15 @@ public class ApigeeTokenRequestOneTimePasswordEnhancer implements RequestEnhance
     private final GoogleAuthOtpGenerator otpGenerator;
 
     private String otpKey; // rktodo move to GoogleAuthOtpGenerator - but review the libraries first!
+    private final String basicAuthToken;
 
     public ApigeeTokenRequestOneTimePasswordEnhancer(final GoogleAuthOtpGenerator otpGenerator,
-                                                     final String otpKey) {
+                                                     final String otpKey,
+                                                     final String basicAuthToken
+    ) {
         this.otpKey = otpKey;
         this.otpGenerator = otpGenerator;
+        this.basicAuthToken = basicAuthToken;
     }
 
     @Override
@@ -31,6 +35,8 @@ public class ApigeeTokenRequestOneTimePasswordEnhancer implements RequestEnhance
         final MultiValueMap<String, String> form,
         final HttpHeaders headers
     ) {
+        headers.add("Authorization", "Basic " + basicAuthToken);
+
         form.add(TOKEN_REQUEST_FIELD_NAME_MFA_TOKEN, otpGenerator.googleAuthenticatorCode(otpKey, clock));
     }
 }

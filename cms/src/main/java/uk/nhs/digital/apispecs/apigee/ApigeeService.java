@@ -65,13 +65,17 @@ public class ApigeeService implements OpenApiSpecificationRepository {
     }
 
     private void tryCrisp() {
+
+        // if (true) {return};
         final ResourceServiceBroker broker = CrispHstServices.getDefaultResourceServiceBroker(HstServices.getComponentManager());
 
         final Resource product = broker.resolve("apigeeAllSpecifications", "");
 
+
         // try setting custom interceptor on OAuth2RestTemplate to generate and supply OTP
 
-        System.out.println("Product: " + product);
+        System.out.println("Product content: " + product.getValue("contents"));
+
     }
 
     private List<OpenApiSpecificationStatus> getSpecStatuses(final String accessToken) throws ApigeeServiceException {

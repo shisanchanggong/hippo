@@ -11,7 +11,7 @@ public class GoogleAuthOtpGenerator {
 
     public GoogleAuthOtpGenerator() {}
 
-    public String googleAuthenticatorCode(String secret, Clock clock) throws Exception {
+    public String googleAuthenticatorCode(String secret, Clock clock) {
         try {
             if (secret == null || secret == "") {
                 throw new Exception("Secret key does not exist.");

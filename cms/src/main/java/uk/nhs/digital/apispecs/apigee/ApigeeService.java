@@ -45,6 +45,7 @@ public class ApigeeService implements OpenApiSpecificationRepository {
     private RestTemplate restTemplate;
     private ApigeeClientConfig config;
     private Clock clock;
+    private GoogleAuthOtpGenerator auth = new GoogleAuthOtpGenerator();
 
     public ApigeeService(RestTemplate restTemplate, ApigeeClientConfig config, Clock clock) {
         this.restTemplate = restTemplate;
@@ -67,7 +68,6 @@ public class ApigeeService implements OpenApiSpecificationRepository {
         final ResourceServiceBroker broker = CrispHstServices.getDefaultResourceServiceBroker(HstServices.getComponentManager());
 
         final Resource product = broker.resolve("apigeeAllSpecifications", "");
-
 
         // try setting custom interceptor on OAuth2RestTemplate to generate and supply OTP
 
@@ -143,7 +143,6 @@ public class ApigeeService implements OpenApiSpecificationRepository {
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             headers.set(AUTHORIZATION, BASIC + config.getBasicToken());
 
-            GoogleAuthOtpGenerator auth = new GoogleAuthOtpGenerator();
             MultiValueMap<String, String> bodyParamMap = new LinkedMultiValueMap<>();
             bodyParamMap.add(USERNAME, config.getUsername());
             bodyParamMap.add(PASSWORD, config.getPassword());

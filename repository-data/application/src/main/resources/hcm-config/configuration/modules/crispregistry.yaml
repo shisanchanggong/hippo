@@ -69,6 +69,19 @@ definitions:
                                                  </bean>
                                              </constructor-arg>
                                              <property name=\"requestFactory\" ref=\"org.springframework.http.client.ClientHttpRequestFactory\" />
+                                             <property name=\"accessTokenProvider\">
+                                                 <bean class=\"org.springframework.security.oauth2.client.token.grant.password.ResourceOwnerPasswordAccessTokenProvider\">
+                                                     <property name=\"tokenRequestEnhancer\">
+                                                         <bean class=\"uk.nhs.digital.apispecs.apigee.auth.ApigeeTokenRequestOneTimePasswordEnhancer\">
+                                                             <constructor-arg>
+                                                                 <bean class=\"uk.nhs.digital.apispecs.apigee.auth.GoogleAuthOtpGenerator\">
+                                                                 </bean>
+                                                             </constructor-arg>
+                                                             <constructor-arg value=\"${DEVZONE_APIGEE_OAUTH_OTPKEY}\" />
+                                                         </bean>
+                                                     </property>
+                                                 </bean>
+                                             </property>
                                          </bean>
                                      </property>
                                  </bean>

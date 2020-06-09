@@ -38,17 +38,16 @@ definitions:
       - 'true'
       - ''
       jcr:primaryType: crisp:resourceresolver
-    ? /hippo:configuration/hippo:modules/crispregistry/hippo:moduleconfig/crisp:resourceresolvercontainer/apigeeAllSpecifications
+    ? /hippo:configuration/hippo:modules/crispregistry/hippo:moduleconfig/crisp:resourceresolvercontainer/apigeeManagementApi
     : crisp:beandefinition: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
                              <beans xmlns=\"http://www.springframework.org/schema/beans\"
                                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
                                     xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd\">
 
-                                 <bean id=\"apigeeAllSpecifications\"
+                                 <bean id=\"apigeeManagementApi\"
                                        parent=\"abstractCrispSimpleJacksonRestTemplateResourceResolver\"
                                        class=\"org.onehippo.cms7.crisp.core.resource.jackson.SimpleJacksonRestTemplateResourceResolver\">
                                      <property name=\"cacheEnabled\" value=\"false\" />
-                                     <property name=\"baseUri\" value=\"${devzone.apigee.resources.specs.all.url}\" />
                                      <property name=\"restTemplate\">
                                          <bean class=\"org.springframework.security.oauth2.client.OAuth2RestTemplate\">
                                              <constructor-arg>

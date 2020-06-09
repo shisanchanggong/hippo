@@ -5,14 +5,12 @@ import org.onehippo.repository.scheduling.RepositoryJob;
 import org.onehippo.repository.scheduling.RepositoryJobExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.client.RestTemplate;
 import uk.nhs.digital.apispecs.ApiSpecificationDocumentPublicationService;
 import uk.nhs.digital.apispecs.apigee.ApigeeClientConfig;
 import uk.nhs.digital.apispecs.apigee.ApigeeService;
 import uk.nhs.digital.apispecs.jcr.ApiSpecificationDocumentJcrRepository;
 import uk.nhs.digital.apispecs.swagger.SwaggerCodeGenApiSpecificationHtmlProvider;
 
-import java.time.Clock;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -59,8 +57,6 @@ public class ApiSpecSyncFromApigeeJob implements RepositoryJob {
             ensureRequiredArgProvided(BASIC_TOKEN, basicToken);
             ensureRequiredArgProvided(OTP_KEY, otpKey);
 
-            final RestTemplate restTemplate = new RestTemplate();
-
             final ApigeeClientConfig config = new ApigeeClientConfig(
                 oauthAapigeeAllSpecUrl,
                 apigeeSingleSpecUrl,
@@ -71,9 +67,7 @@ public class ApiSpecSyncFromApigeeJob implements RepositoryJob {
                 otpKey
             );
 
-            final Clock clock = Clock.systemDefaultZone();
-
-            final ApigeeService apigeeService = new ApigeeService(restTemplate, config, clock);
+            final ApigeeService apigeeService = new ApigeeService(config);
 
             final ApiSpecificationDocumentPublicationService apiSpecificationDocumentPublicationService =
                 new ApiSpecificationDocumentPublicationService(

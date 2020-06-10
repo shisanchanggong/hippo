@@ -14,6 +14,7 @@ import uk.nhs.digital.apispecs.apigee.ApigeeService;
 import uk.nhs.digital.apispecs.jcr.ApiSpecificationDocumentJcrRepository;
 import uk.nhs.digital.apispecs.swagger.SwaggerCodeGenApiSpecificationHtmlProvider;
 
+import java.util.Optional;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -38,7 +39,6 @@ public class ApiSpecSyncFromApigeeJob implements RepositoryJob {
 
         LOGGER.debug("API Specifications sync from Apigee: start.");
 
-        final Session session = context.createSystemSession();
 
         // System properties for config - LOGGED ON SYSTEM START
         final String oauthAapigeeAllSpecUrl = System.getProperty(APIGEE_ALL_SPEC_URL);
@@ -51,7 +51,10 @@ public class ApiSpecSyncFromApigeeJob implements RepositoryJob {
         final String basicToken = System.getenv(BASIC_TOKEN);
         final String otpKey = System.getenv(OTP_KEY);
 
+        Session session = null;
+
         try {
+
             ensureRequiredArgProvided(APIGEE_ALL_SPEC_URL, oauthAapigeeAllSpecUrl);
             ensureRequiredArgProvided(APIGEE_SINGLE_SPEC_URL, apigeeSingleSpecUrl);
             ensureRequiredArgProvided(OAUTH_TOKEN_URL, oauthTokenUrl);
@@ -59,6 +62,8 @@ public class ApiSpecSyncFromApigeeJob implements RepositoryJob {
             ensureRequiredArgProvided(PASSWORD, password);
             ensureRequiredArgProvided(BASIC_TOKEN, basicToken);
             ensureRequiredArgProvided(OTP_KEY, otpKey);
+
+            session = context.createSystemSession();
 
             final ApigeeClientConfig config = new ApigeeClientConfig(
                 oauthAapigeeAllSpecUrl,
@@ -89,15 +94,15 @@ public class ApiSpecSyncFromApigeeJob implements RepositoryJob {
         } catch (final Exception ex) {
             LOGGER.error("Failed to publish specifications.", ex);
         } finally {
-            session.logout();
+            Optional.ofNullable(session).ifPresent(Session::logout);
         }
-    }
-
-    private ResourceServiceBroker resourceServiceBroker() {
-        return CrispHstServices.getDefaultResourceServiceBroker(HstServices.getComponentManager());
     }
 
     private void ensureRequiredArgProvided(final String argName, final String argValue) {
         Validate.notBlank(argValue, "Required configuration argument is missing: %s", argName);
+    }
+
+    private ResourceServiceBroker resourceServiceBroker() {
+        return CrispHstServices.getDefaultResourceServiceBroker(HstServices.getComponentManager());
     }
 }

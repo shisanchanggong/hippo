@@ -69,6 +69,9 @@
 
         <hippo.cms.locales></hippo.cms.locales>
 
+        <!-- Keep in line with BloomReach version - see <parent><version> above -->
+        <hippo.version>13.4.2</hippo.version>
+
         <!-- revision variable is set by automation tools. dev-SNAPSHOT is the
         default, local value. Please don't change it. -->
         <revision>dev-SNAPSHOT</revision>
@@ -546,6 +549,12 @@
                 <groupId>com.onehippo.cms7</groupId>
                 <artifactId>hippo-addon-inference-engine-collector-plugin</artifactId>
                 <version>${hippo-addon-inference-engine.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.onehippo.cms7</groupId>
+                <artifactId>hippo-addon-crisp-mock</artifactId>
+                <version>${hippo.version}</version>
             </dependency>
 
         </dependencies>

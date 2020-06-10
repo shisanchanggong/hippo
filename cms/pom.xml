@@ -159,6 +159,11 @@
             <artifactId>hippo-addon-crisp-repository</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.onehippo.cms7</groupId>
+            <artifactId>hippo-addon-crisp-mock</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.onehippo.cms7</groupId>
             <artifactId>hippo-addon-targeting-cms-dependencies</artifactId>
             <type>pom</type>

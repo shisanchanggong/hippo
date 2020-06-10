@@ -131,9 +131,6 @@ public class ApiSpecificationDocumentPublicationServiceTest {
         final String specificationAId = "248569";
         final String specificationBId = "965842";
 
-        // @formatter:off
-        // @formatter:on
-
         final ApiSpecificationDocument cmsSpecAPublished = apiSpecDoc(specificationAId, "2020-05-11T10:30:00.000Z");
         final ApiSpecificationDocument cmsSpecBPublished = apiSpecDoc(specificationBId, "2020-05-10T10:30:00.000Z");
         when(apiSpecDocumentRepo.findAllApiSpecifications()).thenReturn(asList(

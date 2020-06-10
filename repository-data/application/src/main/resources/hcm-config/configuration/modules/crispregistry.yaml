@@ -68,8 +68,6 @@ definitions:
                                                  </bean>
                                              </constructor-arg>
 
-                                             <property name=\"requestFactory\" ref=\"org.springframework.http.client.ClientHttpRequestFactory\" />
-
                                              <property name=\"accessTokenProvider\">
                                                  <bean class=\"org.springframework.security.oauth2.client.token.grant.password.ResourceOwnerPasswordAccessTokenProvider\">
                                                      <property name=\"tokenRequestEnhancer\">

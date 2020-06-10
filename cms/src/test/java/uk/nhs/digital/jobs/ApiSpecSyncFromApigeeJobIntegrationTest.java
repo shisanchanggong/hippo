@@ -10,25 +10,31 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.spy;
 import static org.powermock.api.mockito.PowerMockito.*;
 import static uk.nhs.digital.test.util.FileUtils.readFileInClassPath;
-import static uk.nhs.digital.test.util.JcrTestUtils.*;
 import static uk.nhs.digital.test.util.JcrTestUtils.BloomReachJcrDocumentVariantType.DRAFT;
+import static uk.nhs.digital.test.util.JcrTestUtils.*;
 import static uk.nhs.digital.test.util.MockJcrRepoProvider.initJcrRepoFromYaml;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.collect.ImmutableMap;
 import org.apache.sling.testing.mock.jcr.MockJcr;
 import org.hippoecm.repository.api.Document;
-import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.onehippo.cms7.crisp.api.resource.ResourceResolver;
+import org.onehippo.cms7.crisp.core.resource.jackson.SimpleJacksonRestTemplateResourceResolver;
+import org.onehippo.cms7.crisp.mock.broker.MockResourceServiceBroker;
+import org.onehippo.cms7.crisp.mock.module.MockCrispHstServices;
 import org.onehippo.forge.content.exim.core.DocumentManager;
 import org.onehippo.repository.documentworkflow.DocumentVariant;
 import org.onehippo.repository.scheduling.RepositoryJobExecutionContext;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriTemplate;
 import uk.nhs.digital.JcrDocumentUtils;
@@ -37,6 +43,7 @@ import uk.nhs.digital.apispecs.jobs.ApiSpecSyncFromApigeeJob;
 import javax.jcr.Node;
 import javax.jcr.Session;
 
+@Ignore("WIP")
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JcrDocumentUtils.class, ApiSpecSyncFromApigeeJob.class})
 @PowerMockIgnore({"javax.net.ssl.*", "javax.crypto.*"})
@@ -46,7 +53,7 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
 
     // Test data
     private static final String TEST_SPEC_ID = "269326";
-    private static final String TEST_DATA_FILES_PATH = "/test-data/api-specifications/ApiSpecConversionJobIntegrationTest";
+    private static final String TEST_DATA_FILES_PATH = "/test-data/api-specifications/ApiSpecConversionJobIntegrationTest/";
 
     @Rule public ExpectedException expectedException = ExpectedException.none();
 
@@ -59,7 +66,7 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
     private RepositoryJobExecutionContext repositoryJobExecutionContext;
 
     // Apigee URLs
-    private String apigeeAllSpecsUrlPath = "/dapi/api/organizations/nhsd-nonprod/specs/folder/home/specs";
+    private String apigeeAllSpecsUrlPath = "/dapi/api/organizations/test-org/specs/folder/home/specs";
     private String apigeeSingleSpecUrlPathTemplate = "/dapi/api/organizations/test-org/specs/doc/{specificationId}/content";
     private String oauthTokenUrlPath = "/oauth/token";
 
@@ -69,6 +76,7 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
     public void setUp() throws Exception {
 
         setUpCmsToApigeeAccessConfig();
+        setUpCrispApi();
 
         session = spy(MockJcr.newSession());
         doNothing().when(session).logout(); // prevent the job from closing the session - it's needed in assertions
@@ -125,6 +133,35 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
         given(System.getenv("DEVZONE_APIGEE_OAUTH_PASSWORD")).willReturn(oauthPassword);
         given(System.getenv("DEVZONE_APIGEE_OAUTH_BASICAUTHTOKEN")).willReturn(oauthBasicAuthToken);
         given(System.getenv("DEVZONE_APIGEE_OAUTH_OTPKEY")).willReturn(oauthOtpKey);
+    }
+
+    private void setUpCrispApi() {
+
+        // See https://documentation.bloomreach.com/14/library/concepts/crisp-api/unit-testing.html
+
+
+        // rktodo - parent bean (normally defined in hippo-addon-crisp-core/13.4.2/hippo-addon-crisp-core-13.4.2.jar!/META-INF/spring-assembly/addon/crisp/crisp-addon-resource-resolvers.xml
+        // rktodo - XML in XML file
+
+        final ClassPathXmlApplicationContext applicationContext =
+            new ClassPathXmlApplicationContext(
+                TEST_DATA_FILES_PATH + "crisp-spring-context.xml"
+            );
+
+        final String apigeeManagementApiCrispApiNamespace = "apigeeManagementApi";
+
+        final SimpleJacksonRestTemplateResourceResolver simpleJacksonRestTemplateResourceResolver =
+            applicationContext.getBean(apigeeManagementApiCrispApiNamespace, SimpleJacksonRestTemplateResourceResolver.class);
+
+        final ImmutableMap<String, ResourceResolver> resourceResolverMap = ImmutableMap.<String, ResourceResolver>builder()
+            .put(apigeeManagementApiCrispApiNamespace, simpleJacksonRestTemplateResourceResolver)
+            .build();
+
+        final MockResourceServiceBroker mockResourceServiceBroker = new MockResourceServiceBroker(
+            resourceResolverMap
+        );
+
+        MockCrispHstServices.setDefaultResourceServiceBroker(mockResourceServiceBroker);
     }
 
     private void verifyHtmlGeneratedFromApigeeSpecWasSetOnApiSpecificationDocument() {
@@ -205,7 +242,7 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
 
     private void cmsContainsSpecDocMatchingUpdatedSpecInApigee() throws Exception {
 
-        initJcrRepoFromYaml(session, TEST_DATA_FILES_PATH + "/specification-documents-in-cms.yml");
+        initJcrRepoFromYaml(session, TEST_DATA_FILES_PATH + "specification-documents-in-cms.yml");
 
         repositoryRootNode = getRootNode(session);
 
@@ -229,14 +266,18 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
     }
 
     private String apigeeApiSpecificationsJson() {
-        return readFileInClassPath(TEST_DATA_FILES_PATH + "/specifications-in-apigee.json");
+        return testDataFromFile("specifications-in-apigee.json");
     }
 
     private String apigeeApiSpecificationJson() {
-        return readFileInClassPath(TEST_DATA_FILES_PATH + "/openapi-specification.json");
+        return testDataFromFile("openapi-specification.json");
     }
 
     private String codeGenGeneratedSpecificationHtml() {
-        return readFileInClassPath(TEST_DATA_FILES_PATH + "/codegen-generated-spec.html");
+        return testDataFromFile("codegen-generated-spec.html");
+    }
+
+    private String testDataFromFile(final String testDataFileName) {
+        return readFileInClassPath(TEST_DATA_FILES_PATH + testDataFileName);
     }
 }

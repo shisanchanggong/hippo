@@ -29,7 +29,8 @@ public class ApigeeService implements OpenApiSpecificationRepository {
         this.resourceServiceBroker = resourceServiceBroker;
     }
 
-    @Override public List<OpenApiSpecificationStatus> apiSpecificationStatuses() throws OpenApiSpecificationRepositoryException {
+    @Override
+    public List<OpenApiSpecificationStatus> apiSpecificationStatuses() throws OpenApiSpecificationRepositoryException {
 
         log.debug("Retrieving list of available specifications.");
 
@@ -43,7 +44,8 @@ public class ApigeeService implements OpenApiSpecificationRepository {
         );
     }
 
-    @Override public String apiSpecificationJsonForSpecId(final String specificationId) throws OpenApiSpecificationRepositoryException {
+    @Override
+    public String apiSpecificationJsonForSpecId(final String specificationId) throws OpenApiSpecificationRepositoryException {
 
         log.debug("Retrieving specification with id {}.", specificationId);
 

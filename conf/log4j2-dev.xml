@@ -132,10 +132,6 @@
         <Logger name="uk.nhs.digital" level="debug" />
         <Logger name="com.onehippo.cms7.targeting" level="warn"/>
 
-        <Logger name="org.springframework.http" level="debug"/>
-        <Logger name="org.springframework.codec" level="debug"/>
-        <Logger name="org.springframework.web" level="debug"/>
-
         <Root level="warn">
             <AppenderRef ref="site"/>
             <AppenderRef ref="cms"/>

@@ -60,7 +60,7 @@ public class ApiSpecificationDocumentPublicationServiceTest {
         when(apiSpecDocumentRepo.findAllApiSpecifications()).thenReturn(singletonList(cmsSpecPublished));
 
         final OpenApiSpecificationStatus apigeeSpecUpdateSincePublished = remoteSpecStatus(specificationId, lastApigeeModificationTimestamp);
-        when(apigeeService.getSpecsStatuses()).thenReturn(singletonList(apigeeSpecUpdateSincePublished));
+        when(apigeeService.apiSpecificationStatuses()).thenReturn(singletonList(apigeeSpecUpdateSincePublished));
 
         final String specificationHtml = "<html><body> Some spec content </body></html>";
         when(apiSpecHtmlProvider.getHtmlForSpec(any())).thenReturn(specificationHtml);
@@ -88,7 +88,7 @@ public class ApiSpecificationDocumentPublicationServiceTest {
         when(apiSpecDocumentRepo.findAllApiSpecifications()).thenReturn(singletonList(cmsSpecPublished));
 
         final OpenApiSpecificationStatus apigeeSpecNotUpdatedSincePublished = remoteSpecStatus(specificationId, lastApigeeModificationTimestamp);
-        when(apigeeService.getSpecsStatuses()).thenReturn(singletonList(apigeeSpecNotUpdatedSincePublished));
+        when(apigeeService.apiSpecificationStatuses()).thenReturn(singletonList(apigeeSpecNotUpdatedSincePublished));
 
         // when
         apiSpecificationDocumentPublicationService.updateAndPublishEligibleSpecifications();
@@ -114,7 +114,7 @@ public class ApiSpecificationDocumentPublicationServiceTest {
         when(apiSpecDocumentRepo.findAllApiSpecifications()).thenReturn(singletonList(cmsSpecPublished));
 
         final OpenApiSpecificationStatus apigeeSpecUpdateSincePublished = remoteSpecStatus(remoteSpecificationId, lastApigeeModificationTimestamp);
-        when(apigeeService.getSpecsStatuses()).thenReturn(singletonList(apigeeSpecUpdateSincePublished));
+        when(apigeeService.apiSpecificationStatuses()).thenReturn(singletonList(apigeeSpecUpdateSincePublished));
 
         // when
         apiSpecificationDocumentPublicationService.updateAndPublishEligibleSpecifications();
@@ -143,7 +143,7 @@ public class ApiSpecificationDocumentPublicationServiceTest {
 
         final OpenApiSpecificationStatus apigeeSpecAUpdateSincePublished = remoteSpecStatus(specificationAId, "2020-05-20T10:30:00.000Z");
         final OpenApiSpecificationStatus apigeeSpecBUpdateSincePublished = remoteSpecStatus(specificationBId, "2020-05-21T10:30:00.000Z");
-        when(apigeeService.getSpecsStatuses()).thenReturn(asList(
+        when(apigeeService.apiSpecificationStatuses()).thenReturn(asList(
             apigeeSpecAUpdateSincePublished,
             apigeeSpecBUpdateSincePublished
         ));
@@ -175,12 +175,6 @@ public class ApiSpecificationDocumentPublicationServiceTest {
     }
 
     private OpenApiSpecificationStatus remoteSpecStatus(final String specificationId, final String lastModifiedInstant) {
-
-        final OpenApiSpecificationStatus openApiSpecificationStatus = new OpenApiSpecificationStatus(); // rktodo make immutable
-        openApiSpecificationStatus.setId(specificationId);
-        openApiSpecificationStatus.setModified(Instant.parse(lastModifiedInstant));
-
-        return openApiSpecificationStatus;
+        return new OpenApiSpecificationStatus(specificationId, lastModifiedInstant);
     }
-
 }

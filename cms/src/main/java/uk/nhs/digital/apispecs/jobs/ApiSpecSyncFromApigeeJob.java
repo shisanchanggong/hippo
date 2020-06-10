@@ -1,6 +1,9 @@
 package uk.nhs.digital.apispecs.jobs;
 
 import org.apache.commons.lang3.Validate;
+import org.hippoecm.hst.site.HstServices;
+import org.onehippo.cms7.crisp.api.broker.ResourceServiceBroker;
+import org.onehippo.cms7.crisp.hst.module.CrispHstServices;
 import org.onehippo.repository.scheduling.RepositoryJob;
 import org.onehippo.repository.scheduling.RepositoryJobExecutionContext;
 import org.slf4j.Logger;
@@ -67,7 +70,10 @@ public class ApiSpecSyncFromApigeeJob implements RepositoryJob {
                 otpKey
             );
 
-            final ApigeeService apigeeService = new ApigeeService(config);
+            final ApigeeService apigeeService = new ApigeeService(
+                config,
+                resourceServiceBroker()
+            );
 
             final ApiSpecificationDocumentPublicationService apiSpecificationDocumentPublicationService =
                 new ApiSpecificationDocumentPublicationService(
@@ -85,6 +91,10 @@ public class ApiSpecSyncFromApigeeJob implements RepositoryJob {
         } finally {
             session.logout();
         }
+    }
+
+    private ResourceServiceBroker resourceServiceBroker() {
+        return CrispHstServices.getDefaultResourceServiceBroker(HstServices.getComponentManager());
     }
 
     private void ensureRequiredArgProvided(final String argName, final String argValue) {

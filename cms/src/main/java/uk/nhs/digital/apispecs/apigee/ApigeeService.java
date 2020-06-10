@@ -1,55 +1,101 @@
 package uk.nhs.digital.apispecs.apigee;
 
-import org.hippoecm.hst.site.HstServices;
+import static java.util.Collections.unmodifiableList;
+
 import org.onehippo.cms7.crisp.api.broker.ResourceServiceBroker;
 import org.onehippo.cms7.crisp.api.resource.Resource;
-import org.onehippo.cms7.crisp.hst.module.CrispHstServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.util.UriComponentsBuilder;
 import uk.nhs.digital.apispecs.OpenApiSpecificationRepository;
+import uk.nhs.digital.apispecs.OpenApiSpecificationRepositoryException;
 import uk.nhs.digital.apispecs.model.OpenApiSpecificationStatus;
 
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class ApigeeService implements OpenApiSpecificationRepository {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ApigeeService.class);
+    private static final Logger log = LoggerFactory.getLogger(ApigeeService.class);
 
     private static final String RESOURCE_NAMESPACE_APIGEE_MANAGEMENT_API = "apigeeManagementApi";
 
-    private ApigeeClientConfig config;
+    private final ApigeeClientConfig config;
+    private final ResourceServiceBroker resourceServiceBroker;
 
-    public ApigeeService(ApigeeClientConfig config) {
+    public ApigeeService(final ApigeeClientConfig config, final ResourceServiceBroker resourceServiceBroker) {
         this.config = config;
+        this.resourceServiceBroker = resourceServiceBroker;
     }
 
-    @Override public List<OpenApiSpecificationStatus> getSpecsStatuses() throws ApigeeServiceException {
+    @Override public List<OpenApiSpecificationStatus> apiSpecificationStatuses() throws OpenApiSpecificationRepositoryException {
 
-        LOGGER.debug("Retrieving list of available specifications.");
+        log.debug("Retrieving list of available specifications.");
 
-        final ResourceServiceBroker broker = CrispHstServices.getDefaultResourceServiceBroker(HstServices.getComponentManager());
+        return throwServiceExceptionOnFailure(() -> {
 
-        final Resource resource = broker.resolve(RESOURCE_NAMESPACE_APIGEE_MANAGEMENT_API, config.getAllSpecUrl());
+                final Resource resource = resourceAt(config.getAllSpecUrl());
 
-        return broker
-            .getResourceBeanMapper(RESOURCE_NAMESPACE_APIGEE_MANAGEMENT_API)
-            .map(resource, ApigeeSpecificationsStatuses.class)
-            .getContents();
+                return apigeeApiSpecificationsStatusesFrom(resource);
+            },
+            "Failed to retrieve list of available specifications."
+        );
     }
 
-    @Override public String getSpecification(final String specificationId) {
+    @Override public String apiSpecificationJsonForSpecId(final String specificationId) throws OpenApiSpecificationRepositoryException {
 
-        LOGGER.debug("Retrieving specification with id {}.", specificationId);
+        log.debug("Retrieving specification with id {}.", specificationId);
 
-        final String singleSpecUrl = UriComponentsBuilder.fromHttpUrl(config.getSingleSpecUrl()).build(specificationId).toString();
+        return throwServiceExceptionOnFailure(() -> {
 
-        final ResourceServiceBroker broker = CrispHstServices.getDefaultResourceServiceBroker(HstServices.getComponentManager());
+                final String singleSpecUrl = urlForSingleSpecification(specificationId);
 
-        final Resource resource = broker.resolve(RESOURCE_NAMESPACE_APIGEE_MANAGEMENT_API, singleSpecUrl);
+                final Resource resource = resourceAt(singleSpecUrl);
 
+                return apigeeApiSpecificationJsonFrom(resource);
+
+            },
+            "Failed to retrieve specification with id {0}.", specificationId
+        );
+    }
+
+    private String urlForSingleSpecification(final String specificationId) {
+        return UriComponentsBuilder.fromHttpUrl(config.getSingleSpecUrl()).build(specificationId).toString();
+    }
+
+    private Resource resourceAt(final String url) {
+        return resourceServiceBroker.resolve(RESOURCE_NAMESPACE_APIGEE_MANAGEMENT_API, url);
+    }
+
+    private List<OpenApiSpecificationStatus> apigeeApiSpecificationsStatusesFrom(final Resource resource) {
+        return unmodifiableList(
+                resourceServiceBroker
+                    .getResourceBeanMapper(RESOURCE_NAMESPACE_APIGEE_MANAGEMENT_API)
+                    .map(resource, ApigeeSpecificationsStatuses.class)
+                    .getContents()
+            );
+    }
+
+    private String apigeeApiSpecificationJsonFrom(final Resource resource) {
         return resource.getNodeData().toString();
-
     }
 
+    private <T> T throwServiceExceptionOnFailure(
+        final Supplier<T> supplier,
+        final String errorMessage,
+        final Object... errorMessageArgs
+    ) {
+        try {
+            return supplier.get();
+        } catch (final Exception cause) {
+
+            final String formattedErrorMessage = MessageFormat.format(
+                errorMessage,
+                errorMessageArgs
+            );
+
+            throw new OpenApiSpecificationRepositoryException(formattedErrorMessage, cause);
+        }
+    }
 }

@@ -68,21 +68,14 @@ definitions:
                                                  </bean>
                                              </constructor-arg>
 
-                                             <property name=\"requestFactory\">
-                                                <bean class=\"org.springframework.http.client.BufferingClientHttpRequestFactory\">
-                                                    <constructor-arg>
-                                                        <bean class=\"org.springframework.http.client.SimpleClientHttpRequestFactory\">
-                                                        </bean>
-                                                    </constructor-arg>
-                                                </bean>
-                                             </property>
+                                             <property name=\"requestFactory\" ref=\"org.springframework.http.client.ClientHttpRequestFactory\" />
 
                                              <property name=\"accessTokenProvider\">
                                                  <bean class=\"org.springframework.security.oauth2.client.token.grant.password.ResourceOwnerPasswordAccessTokenProvider\">
                                                      <property name=\"tokenRequestEnhancer\">
-                                                         <bean class=\"uk.nhs.digital.apispecs.apigee.auth.ApigeeTokenRequestOneTimePasswordEnhancer\">
+                                                         <bean class=\"uk.nhs.digital.apispecs.apigee.auth.ApigeeAccessTokenRequestOneTimePasswordEnhancer\">
                                                              <constructor-arg>
-                                                                 <bean class=\"uk.nhs.digital.apispecs.apigee.auth.GoogleAuthOtpGenerator\">
+                                                                 <bean class=\"com.warrenstrange.googleauth.GoogleAuthenticator\">
                                                                  </bean>
                                                              </constructor-arg>
                                                              <constructor-arg value=\"${DEVZONE_APIGEE_OAUTH_OTPKEY}\" />
@@ -90,12 +83,6 @@ definitions:
                                                          </bean>
                                                      </property>
                                                  </bean>
-                                             </property>
-                                             <property name=\"interceptors\">
-                                                  <list>
-                                                    <bean class=\"uk.nhs.digital.apispecs.apigee.auth.RequestResponseLoggingInterceptor\">
-                                                    </bean>
-                                                  </list>
                                              </property>
                                          </bean>
                                      </property>

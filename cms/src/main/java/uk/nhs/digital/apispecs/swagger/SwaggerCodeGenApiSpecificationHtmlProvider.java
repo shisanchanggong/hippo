@@ -119,7 +119,7 @@ public class SwaggerCodeGenApiSpecificationHtmlProvider implements ApiSpecificat
 
     private File getOpenApiSpecFor(final ApiSpecificationDocument apiSpecificationDocument) {
 
-        final String openApiSpecJson = openApiSpecificationRepository.getSpecification(apiSpecificationDocument.getId());
+        final String openApiSpecJson = openApiSpecificationRepository.apiSpecificationJsonForSpecId(apiSpecificationDocument.getId());
 
         final File tempFile;
         try {

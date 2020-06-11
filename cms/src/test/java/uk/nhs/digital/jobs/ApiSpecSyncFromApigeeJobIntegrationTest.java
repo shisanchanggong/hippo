@@ -18,6 +18,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableMap;
 import org.apache.sling.testing.mock.jcr.MockJcr;
 import org.hippoecm.repository.api.Document;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -35,6 +36,8 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriTemplate;
 import uk.nhs.digital.JcrDocumentUtils;
@@ -46,7 +49,7 @@ import javax.jcr.Session;
 @Ignore("WIP")
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JcrDocumentUtils.class, ApiSpecSyncFromApigeeJob.class})
-@PowerMockIgnore({"javax.net.ssl.*", "javax.crypto.*"})
+@PowerMockIgnore({"javax.net.ssl.*", "javax.crypto.*", "javax.management.*"})
 public class ApiSpecSyncFromApigeeJobIntegrationTest {
 
     private static final String PROPERTY_NAME_WEBSITE_HTML = "website:html";
@@ -71,6 +74,7 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
     private String oauthTokenUrlPath = "/oauth/token";
 
     private ApiSpecSyncFromApigeeJob apiSpecSyncFromApigeeJob;
+    private ConfigurableEnvironment springApplicationContextEnvironment;
 
     @Before
     public void setUp() throws Exception {
@@ -125,6 +129,7 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
 
         mockStatic(System.class);
 
+        // rktodo constants
         given(System.getProperty("devzone.apigee.resources.specs.all.url")).willReturn(apigeeAllSpecsUrl);
         given(System.getProperty("devzone.apigee.resources.specs.individual.url")).willReturn(apigeeSingleSpecUrlTemplate);
         given(System.getProperty("devzone.apigee.oauth.token.url")).willReturn(oauthTokenUrl);
@@ -133,20 +138,30 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
         given(System.getenv("DEVZONE_APIGEE_OAUTH_PASSWORD")).willReturn(oauthPassword);
         given(System.getenv("DEVZONE_APIGEE_OAUTH_BASICAUTHTOKEN")).willReturn(oauthBasicAuthToken);
         given(System.getenv("DEVZONE_APIGEE_OAUTH_OTPKEY")).willReturn(oauthOtpKey);
+
+        springApplicationContextEnvironment = new MockEnvironment()
+            .withProperty("devzone.apigee.resources.specs.all.url", apigeeAllSpecsUrl)
+            .withProperty("devzone.apigee.oauth.token.url", oauthTokenUrl)
+            .withProperty("devzone.apigee.resources.specs.individual.url", apigeeSingleSpecUrlTemplate)
+            .withProperty("DEVZONE_APIGEE_OAUTH_USERNAME", oauthUsername)
+            .withProperty("DEVZONE_APIGEE_OAUTH_PASSWORD", oauthPassword)
+            .withProperty("DEVZONE_APIGEE_OAUTH_BASICAUTHTOKEN", oauthBasicAuthToken)
+            .withProperty("DEVZONE_APIGEE_OAUTH_OTPKEY", oauthOtpKey);
     }
 
     private void setUpCrispApi() {
 
         // See https://documentation.bloomreach.com/14/library/concepts/crisp-api/unit-testing.html
 
-
         // rktodo - parent bean (normally defined in hippo-addon-crisp-core/13.4.2/hippo-addon-crisp-core-13.4.2.jar!/META-INF/spring-assembly/addon/crisp/crisp-addon-resource-resolvers.xml
-        // rktodo - XML in XML file
 
-        final ClassPathXmlApplicationContext applicationContext =
-            new ClassPathXmlApplicationContext(
-                TEST_DATA_FILES_PATH + "crisp-spring-context.xml"
-            );
+        final ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext();
+        applicationContext.setEnvironment(springApplicationContextEnvironment);
+        applicationContext.setConfigLocations(
+                fromTestDataLocation("crisp-spring-context-properties-support.xml"),
+                fromTestDataLocation("crisp-spring-context.xml") // rktodo - XML in XML file (or read from YAML?)
+        );
+        applicationContext.refresh();
 
         final String apigeeManagementApiCrispApiNamespace = "apigeeManagementApi";
 
@@ -197,19 +212,12 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
 
     private void apigeeReturnsAccessToken() {
 
-        // @formatter:off
-        final String apigeeAccessTokenResponse = ""
-            + "{"
-            + "  \"accessToken\":\"eyJhbGciOiJSUzI1NiJ9\""
-            + "}";
-        // @formatter:on
-
         wireMock.givenThat(
             post(urlEqualTo(oauthTokenUrlPath))
                 .willReturn(
                     ok()
                         .withHeader("Content-Type", "application/json;charset=UTF-8")
-                        .withBody(apigeeAccessTokenResponse)
+                        .withBody(apigeeAccessTokenResponse())
                 )
         );
     }
@@ -242,7 +250,7 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
 
     private void cmsContainsSpecDocMatchingUpdatedSpecInApigee() throws Exception {
 
-        initJcrRepoFromYaml(session, TEST_DATA_FILES_PATH + "specification-documents-in-cms.yml");
+        initJcrRepoFromYaml(session, fromTestDataLocation("specification-documents-in-cms.yml"));
 
         repositoryRootNode = getRootNode(session);
 
@@ -265,6 +273,10 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
         given(documentManager.obtainEditableDocument(specDocHandleNode)).willReturn(documentVariantDraft);
     }
 
+    private String apigeeAccessTokenResponse() {
+        return readFileInClassPath(fromTestDataLocation("auth-access-token-response.json"));
+    }
+
     private String apigeeApiSpecificationsJson() {
         return testDataFromFile("specifications-in-apigee.json");
     }
@@ -278,6 +290,10 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
     }
 
     private String testDataFromFile(final String testDataFileName) {
-        return readFileInClassPath(TEST_DATA_FILES_PATH + testDataFileName);
+        return readFileInClassPath(fromTestDataLocation(testDataFileName));
+    }
+
+    private String fromTestDataLocation(final String fileName) {
+        return TEST_DATA_FILES_PATH + fileName;
     }
 }

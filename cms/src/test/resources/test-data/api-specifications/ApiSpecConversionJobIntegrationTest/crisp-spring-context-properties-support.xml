@@ -7,7 +7,21 @@
        http://www.springframework.org/schema/context
        http://www.springframework.org/schema/context/spring-context.xsd">
 
-    <!-- This whole file is there just to enable resolution of properties in actual CRISP API Spring Application Context configuration. -->
+
+    <!-- The test programmatically supplies values for properties of the 'apigeeManagementApi' object graph
+         that it loads from the actual CRISP API Spring Application Context XML file.
+    -->
     <context:property-placeholder/>
+
+
+    <!-- Bean 'apigeeManagementApi' in the actual CRISP API Spring Application Context XML file
+         specifies an abstract bean with this id as its parent.
+
+         At actual runtime this is provided by:
+         hippo-addon-crisp-core-13.4.2.jar!/META-INF/spring-assembly/addon/crisp/crisp-addon-resource-resolvers.xml
+
+         ...but in context of the test, this dummy bean is needed to satisfy creation of the 'apigeeManagementApi' bean.
+    -->
+    <bean id="abstractCrispSimpleJacksonRestTemplateResourceResolver" abstract="true"/>
 
 </beans>

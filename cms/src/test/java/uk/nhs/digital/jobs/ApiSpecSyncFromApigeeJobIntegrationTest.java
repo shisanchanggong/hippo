@@ -18,11 +18,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableMap;
 import org.apache.sling.testing.mock.jcr.MockJcr;
 import org.hippoecm.repository.api.Document;
-import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.onehippo.cms7.crisp.api.resource.ResourceResolver;
@@ -43,6 +39,8 @@ import org.springframework.web.util.UriTemplate;
 import uk.nhs.digital.JcrDocumentUtils;
 import uk.nhs.digital.apispecs.jobs.ApiSpecSyncFromApigeeJob;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import javax.jcr.Node;
 import javax.jcr.Session;
 
@@ -56,7 +54,7 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
 
     // Test data
     private static final String TEST_SPEC_ID = "269326";
-    private static final String TEST_DATA_FILES_PATH = "/test-data/api-specifications/ApiSpecConversionJobIntegrationTest/";
+    private static final String TEST_DATA_FILES_DIR = "/test-data/api-specifications/ApiSpecConversionJobIntegrationTest/";
 
     @Rule public ExpectedException expectedException = ExpectedException.none();
 
@@ -75,9 +73,12 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
 
     private ApiSpecSyncFromApigeeJob apiSpecSyncFromApigeeJob;
     private ConfigurableEnvironment springApplicationContextEnvironment;
+    private Path tempCrispApiSpringApplicationContextXmlFile;
 
     @Before
     public void setUp() throws Exception {
+
+        tempCrispApiSpringApplicationContextXmlFile = Files.createTempFile(getClass().getSimpleName(), ".tmp");
 
         setUpCmsToApigeeAccessConfig();
         setUpCrispApi();
@@ -89,6 +90,11 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
         given(repositoryJobExecutionContext.createSystemSession()).willReturn(session);
 
         apiSpecSyncFromApigeeJob = new ApiSpecSyncFromApigeeJob();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        tempCrispApiSpringApplicationContextXmlFile.toFile().delete();
     }
 
     @Test
@@ -158,8 +164,8 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
         final ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext();
         applicationContext.setEnvironment(springApplicationContextEnvironment);
         applicationContext.setConfigLocations(
-                fromTestDataLocation("crisp-spring-context-properties-support.xml"),
-                fromTestDataLocation("crisp-spring-context.xml") // rktodo - XML in XML file (or read from YAML?)
+            fromTestDataLocation("crisp-spring-context-properties-support.xml"),
+            "/META-INF/hst-assembly/addon/crisp/overrides/custom-resource-resolvers.xml"
         );
         applicationContext.refresh();
 
@@ -294,6 +300,6 @@ public class ApiSpecSyncFromApigeeJobIntegrationTest {
     }
 
     private String fromTestDataLocation(final String fileName) {
-        return TEST_DATA_FILES_PATH + fileName;
+        return TEST_DATA_FILES_DIR + fileName;
     }
 }

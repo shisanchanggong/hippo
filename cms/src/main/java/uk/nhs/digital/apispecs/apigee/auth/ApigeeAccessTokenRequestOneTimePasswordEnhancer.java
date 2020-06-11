@@ -48,7 +48,7 @@ public class ApigeeAccessTokenRequestOneTimePasswordEnhancer implements RequestE
         );
     }
 
-    @NotNull private String oneTimePassword() {
+    private String oneTimePassword() {
         return String.valueOf(otpGenerator.getTotpPassword(otpKey, clock.millis()));
     }
 }
